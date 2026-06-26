@@ -108,6 +108,7 @@ public class MainFrame extends JFrame {
                     JOptionPane.showMessageDialog(MainFrame.this, "处理完成，结果已输出到 convert 子目录。", "完成", JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception e) {
                     Throwable cause = e.getCause() == null ? e : e.getCause();
+                    e.printStackTrace();
                     appendLog("任务失败: " + cause.getMessage());
                     JOptionPane.showMessageDialog(MainFrame.this, cause.getMessage(), "错误", JOptionPane.ERROR_MESSAGE);
                 }

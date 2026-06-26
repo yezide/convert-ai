@@ -42,7 +42,7 @@ public class AliBailianClient {
         ArrayNode messages = body.putArray("messages");
         messages.addObject()
                 .put("role", "system")
-                .put("content", "你是影视剧宣发文案专家。请根据原简介判断剧集名字，改写一个新的剧集简介。必须只输出JSON，字段为title和intro。intro总字数与原文相差不要超过10个中文字符。");
+                .put("content", "你是影视剧宣发文案专家。请根据原简介判断剧集名字，改写一个新的剧集简介。必须只输出JSON，字段为title和intro。intro必须简洁有吸引力，整体字数控制在160个到200个中文字符。");
         messages.addObject()
                 .put("role", "user")
                 .put("content", "原简介如下：\n" + originalText);
@@ -51,7 +51,7 @@ public class AliBailianClient {
         String content = response.at("/choices/0/message/content").asText();
         JsonNode parsed = objectMapper.readTree(content);
         String title = sanitizeFileName(parsed.path("title").asText("未命名剧集"));
-        String intro = parsed.path("intro").asText(originalText);
+        String intro = limitLength(parsed.path("intro").asText(originalText), 100);
         return new EpisodeInfo(title.isBlank() ? "未命名剧集" : title, intro);
     }
 
@@ -63,20 +63,25 @@ public class AliBailianClient {
         ArrayNode messages = body.putArray("messages");
         messages.addObject()
                 .put("role", "system")
-                .put("content", "你是影视海报视觉分析师，请分析封面构图、主体、风格、色彩和文字信息，输出适合图片生成模型的中文提示词。");
+                .put("content", "你是影视短剧封面设计师，请分析封面构图、主体、风格、色彩和文字信息，输出适合图片生成模型的中文提示词。提示词必须要求新封面包含剧集名字，标题字体要飘逸、有高级手写感或书法感，文字清晰可读。");
 
         ObjectNode user = messages.addObject();
         user.put("role", "user");
         ArrayNode content = user.putArray("content");
         content.addObject()
                 .put("type", "text")
-                .put("text", "剧集名：" + episodeTitle + "\n新简介：" + intro + "\n请结合图片内容输出一段新版封面生成提示词。");
+                .put("text", "剧集名：" + episodeTitle
+                        + "\n新简介：" + intro
+                        + "\n请结合图片内容输出一段新版竖屏短剧封面生成提示词。"
+                        + "\n硬性要求：封面必须出现剧集名字《" + episodeTitle + "》，标题字体现代飘逸、灵动、有书法或手写笔触质感，文字清晰醒目，不要错别字。");
         content.addObject()
                 .put("type", "image_url")
                 .set("image_url", objectMapper.createObjectNode().put("url", toDataUrl(imagePath)));
 
         JsonNode response = postJson(config.chatUrl(), body);
-        return response.at("/choices/0/message/content").asText();
+        return response.at("/choices/0/message/content").asText()
+                + "\n\n封面文字硬性要求：画面中必须包含剧集名字《" + episodeTitle
+                + "》，标题放在视觉焦点区域，使用飘逸灵动的中文艺术字体、手写书法质感，清晰可读，无错别字。";
     }
 
     public void generateImage(String prompt, Path outputPath) throws IOException, InterruptedException {
@@ -179,5 +184,18 @@ public class AliBailianClient {
 
     private String sanitizeFileName(String name) {
         return name.replaceAll("[\\\\/:*?\"<>|]", "").trim();
+    }
+
+    private String limitLength(String text, int maxCodePoints) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        String normalized = text.replaceAll("\\s+", "");
+        int count = normalized.codePointCount(0, normalized.length());
+        if (count <= maxCodePoints) {
+            return normalized;
+        }
+        int endIndex = normalized.offsetByCodePoints(0, maxCodePoints);
+        return normalized.substring(0, endIndex);
     }
 }

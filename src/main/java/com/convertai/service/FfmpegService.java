@@ -51,8 +51,16 @@ public class FfmpegService {
         command.add("libx264");
         command.add("-preset");
         command.add(config.preset());
-        command.add("-crf");
-        command.add(String.valueOf(config.crf()));
+        command.add("-b:v");
+        command.add(config.bitrate());
+        command.add("-minrate");
+        command.add(config.minrate());
+        command.add("-maxrate");
+        command.add(config.maxrate());
+        command.add("-bufsize");
+        command.add(config.bufsize());
+        command.add("-x264-params");
+        command.add("nal-hrd=cbr:force-cfr=1");
         command.add("-c:a");
         command.add("aac");
         command.add("-b:a");

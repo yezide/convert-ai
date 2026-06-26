@@ -46,13 +46,25 @@ public class AppConfig {
         properties.setProperty("video.watermark-font-file", "C:/Windows/Fonts/msyh.ttc");
         properties.setProperty("video.watermark-x", "20");
         properties.setProperty("video.watermark-y", "20");
-        properties.setProperty("video.output-width", "1920");
-        properties.setProperty("video.output-height", "1080");
+        properties.setProperty("video.output-width", "720");
+        properties.setProperty("video.output-height", "1280");
         properties.setProperty("video.crf", "23");
+        properties.setProperty("video.bitrate", "4500k");
+        properties.setProperty("video.minrate", "4000k");
+        properties.setProperty("video.maxrate", "5000k");
+        properties.setProperty("video.bufsize", "8000k");
         properties.setProperty("video.preset", "medium");
-        properties.setProperty("image.output-size", "1024*1024");
+        properties.setProperty("image.output-size", "720*1280");
         properties.setProperty("image.poll-interval-ms", "2000");
         properties.setProperty("image.poll-timeout-seconds", "180");
+        properties.setProperty("image.title.enabled", "true");
+        properties.setProperty("image.title.font-file", "C:/Windows/Fonts/STXINGKA.TTF");
+        properties.setProperty("image.title.position", "top");
+        properties.setProperty("image.title.margin-top", "80");
+        properties.setProperty("image.title.max-width-ratio", "0.86");
+        properties.setProperty("image.title.font-size-ratio", "0.075");
+        properties.setProperty("image.title.font-color", "#F8E6B0");
+        properties.setProperty("image.title.outline-color", "#3B1608");
         return properties;
     }
 
@@ -121,6 +133,22 @@ public class AppConfig {
         return getInt("video.crf");
     }
 
+    public String bitrate() {
+        return get("video.bitrate");
+    }
+
+    public String minrate() {
+        return get("video.minrate");
+    }
+
+    public String maxrate() {
+        return get("video.maxrate");
+    }
+
+    public String bufsize() {
+        return get("video.bufsize");
+    }
+
     public String preset() {
         return get("video.preset");
     }
@@ -137,6 +165,38 @@ public class AppConfig {
         return Duration.ofSeconds(getLong("image.poll-timeout-seconds"));
     }
 
+    public boolean imageTitleEnabled() {
+        return Boolean.parseBoolean(get("image.title.enabled"));
+    }
+
+    public String imageTitleFontFile() {
+        return get("image.title.font-file");
+    }
+
+    public String imageTitlePosition() {
+        return get("image.title.position");
+    }
+
+    public int imageTitleMarginTop() {
+        return getInt("image.title.margin-top");
+    }
+
+    public double imageTitleMaxWidthRatio() {
+        return getDouble("image.title.max-width-ratio");
+    }
+
+    public double imageTitleFontSizeRatio() {
+        return getDouble("image.title.font-size-ratio");
+    }
+
+    public String imageTitleFontColor() {
+        return get("image.title.font-color");
+    }
+
+    public String imageTitleOutlineColor() {
+        return get("image.title.outline-color");
+    }
+
     private String get(String key) {
         return properties.getProperty(key, "").trim();
     }
@@ -147,5 +207,9 @@ public class AppConfig {
 
     private long getLong(String key) {
         return Long.parseLong(get(key));
+    }
+
+    private double getDouble(String key) {
+        return Double.parseDouble(get(key));
     }
 }

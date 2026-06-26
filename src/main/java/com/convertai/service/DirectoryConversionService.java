@@ -19,11 +19,16 @@ public class DirectoryConversionService {
     private final AppConfig config;
     private final AliBailianClient aiClient;
     private final FfmpegService ffmpegService;
+    private final ImageTitleOverlayService imageTitleOverlayService;
 
-    public DirectoryConversionService(AppConfig config, AliBailianClient aiClient, FfmpegService ffmpegService) {
+    public DirectoryConversionService(AppConfig config,
+                                      AliBailianClient aiClient,
+                                      FfmpegService ffmpegService,
+                                      ImageTitleOverlayService imageTitleOverlayService) {
         this.config = config;
         this.aiClient = aiClient;
         this.ffmpegService = ffmpegService;
+        this.imageTitleOverlayService = imageTitleOverlayService;
     }
 
     public void convert(Path selectedDirectory, LogSink logSink) throws IOException, InterruptedException {
@@ -87,9 +92,11 @@ public class DirectoryConversionService {
         for (Path imageFile : imageFiles) {
             logSink.info("分析封面: " + imageFile.getFileName());
             String prompt = aiClient.analyzeImage(imageFile, episodeInfo.title(), episodeInfo.intro());
-            Path output = outputDirectory.resolve(replaceExtension(imageFile.getFileName().toString(), "png"));
+            Path output = uniqueOutputPath(outputDirectory, safeFileName(episodeInfo.title()), "png");
             logSink.info("生成新封面: " + output.getFileName());
             aiClient.generateImage(prompt, output);
+            imageTitleOverlayService.drawTitle(output, episodeInfo.title());
+            logSink.info("已叠加剧集名: " + episodeInfo.title());
         }
     }
 
@@ -102,7 +109,7 @@ public class DirectoryConversionService {
         AtomicInteger fallback = new AtomicInteger(1);
         for (Path videoFile : videoFiles) {
             int index = EpisodeIndexExtractor.extractIndexOrFallback(videoFile, fallback.getAndIncrement());
-            String outputName = episodeTitle + "-" + index + "." + FileClassifier.extension(videoFile);
+            String outputName = safeFileName(episodeTitle) + " - 第" + index + "集." + FileClassifier.extension(videoFile);
             Path output = outputDirectory.resolve(outputName);
             logSink.info("处理视频: " + videoFile.getFileName() + " -> " + output.getFileName());
             ffmpegService.transcodeTo1080pWithWatermark(videoFile, output, logSink);
@@ -118,10 +125,19 @@ public class DirectoryConversionService {
                 .toList();
     }
 
-    private String replaceExtension(String fileName, String extension) {
-        int dotIndex = fileName.lastIndexOf('.');
-        String baseName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
-        return baseName + "." + extension;
+    private Path uniqueOutputPath(Path directory, String baseName, String extension) {
+        Path candidate = directory.resolve(baseName + "." + extension);
+        int suffix = 2;
+        while (Files.exists(candidate)) {
+            candidate = directory.resolve(baseName + "-" + suffix + "." + extension);
+            suffix++;
+        }
+        return candidate;
+    }
+
+    private String safeFileName(String name) {
+        String safeName = name == null ? "" : name.replaceAll("[\\\\/:*?\"<>|]", "").trim();
+        return safeName.isBlank() ? "未命名剧集" : safeName;
     }
 
     private String readText(Path path) throws IOException {
