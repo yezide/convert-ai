@@ -40,7 +40,7 @@ public class AppConfig {
         properties.setProperty("dashscope.task-query-url-prefix", "https://dashscope.aliyuncs.com/api/v1/tasks/");
         properties.setProperty("model.text", "qwen-max");
         properties.setProperty("model.vision", "qwen-vl-max");
-        properties.setProperty("model.image", "qwen-image-generation");
+        properties.setProperty("model.image", "wanx-v1");
         properties.setProperty("ffmpeg.path", "bin/ffmpeg.exe");
         properties.setProperty("video.watermark-text", "本片由AI生成，仅供娱乐");
         properties.setProperty("video.watermark-font-file", "C:/Windows/Fonts/msyh.ttc");
